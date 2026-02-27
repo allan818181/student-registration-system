@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}My Courses - Student Registration System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-journal-check"></i> My Registered Courses</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'academics:course_list' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Browse More Courses
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- My Courses -->
+<div class="card">
+    <div class="card-body">
+        {% if enrollments %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Course Code</th>
+                        <th>Course Title</th>
+                        <th>Credits</th>
+                        <th>Semester</th>
+                        <th>Status</th>
+                        <th>Grade</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td><strong>{{ enrollment.course.code }}</strong></td>
+                        <td>{{ enrollment.course.title }}</td>
+                        <td>{{ enrollment.course.credit_units }}</td>
+                        <td>{{ enrollment.semester }}</td>
+                        <td>
+                            {% if enrollment.status == 'APPROVED' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% elif enrollment.status == 'PENDING' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif enrollment.status == 'DROPPED' %}
+                            <span class="badge bg-danger">Dropped</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Rejected</span>

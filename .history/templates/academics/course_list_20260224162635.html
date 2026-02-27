@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Courses - Student Registration System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-book"></i> Available Courses</h1>
+    {% if user.is_admin_user %}
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'academics:course_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Course
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Search by code or title..." value="{{ search|default:'' }}">
+            </div>
+            <div class="col-md-3">
+                <select name="programme" class="form-select">
+                    <option value="">All Programmes</option>
+                    {% for prog in programmes %}
+                    <option value="{{ prog.id }}" {% if programme_id == prog.id|stringformat:"s" %}selected{% endif %}>
+                        {{ prog.code }} - {{ prog.name|truncatechars:30 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="semester" class="form-select">
+                    <option value="">All Semesters</option>
+                    {% for s in semesters %}
+                    <option value="{{ s }}" {% if semester_filter == s|stringformat:"s" %}selected{% endif %}>
+                        Semester {{ s }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-1">
+                <a href="{% url 'academics:course_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Course List -->
+<div class="row">
+    {% for course in courses %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="badge bg-primary">{{ course.code }}</span>
+                <span class="badge bg-secondary">{{ course.programme.code }}</span>
+            </div>
+            <div class="card-body">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> Semester {{ course.semester }}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="row mt-2">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="bi bi-people"></i> {{ course.current_enrollment }}/{{ course.capacity }}
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        {% if course.is_full %}
+                        <span class="badge bg-danger">Full</span>
+                        {% else %}
+                        <span class="badge bg-success">{{ course.available_seats }} seats</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if course.prerequisites.exists %}
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-link-45deg"></i> Prerequisites:
+                        {% for prereq in course.prerequisites.all|slice:":3" %}
+                        {{ prereq.code }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if course.prerequisites.count > 3 %}
+                        +{{ course.prerequisites.count|add:"-3" }} more
+                        {% endif %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        {% if course.lecturer %}
+                        <i class="bi bi-person"></i> {{ course.lecturer.get_full_name|default:course.lecturer.username }}
+                        {% else %}
+                        <i class="bi bi-person"></i> Not assigned
+                        {% endif %}
+                    </small>
+                    {% if user.is_student and not course.is_full %}
+                    <button class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Register
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i> No courses found matching your criteria.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if courses.has_other_pages %}
+<nav aria-label="Course pagination">
+    <ul class="pagination justify-content-center">
+        {% if courses.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ courses.previous_page_number }}">Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        
+        {% for num in courses.paginator.page_range %}
+        {% if courses.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > courses.number|add:'-3' and num < courses.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if courses.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ courses.next_page_number }}">Next</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

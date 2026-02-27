@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Enrollments - Student Registration System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-clipboard-check"></i> Course Enrollments</h1>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="PENDING" {% if status_filter == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="APPROVED" {% if status_filter == 'APPROVED' %}selected{% endif %}>Approved</option>
+                    <option value="DROPPED" {% if status_filter == 'DROPPED' %}selected{% endif %}>Dropped</option>
+                    <option value="REJECTED" {% if status_filter == 'REJECTED' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="semester" class="form-select">
+                    <option value="">All Semesters</option>
+                    {% for sem in semesters %}
+                    <option value="{{ sem.id }}">{{ sem }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'enrollment:enrollment_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Enrollment List -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Semester</th>
+                        <th>Status</th>
+                        <th>Grade</th>
+                        <th>Date Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr>
+                        <td>
+                            <strong>{{ enrollment.student.registration_number }}</strong><br>
+                            <small class="text-muted">{{ enrollment.student.user.get_full_name }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ enrollment.course.code }}</strong><br>
+                            <small class="text-muted">{{ enrollment.course.title|truncatechars:25 }}</small>
+                        </td>
+                        <td>{{ enrollment.semester }}</td>
+                        <td>
+                            {% if enrollment.status == 'APPROVED' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% elif enrollment.status == 'PENDING' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif enrollment.status == 'DROPPED' %}
+                            <span class="badge bg-danger">Dropped</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ enrollment.grade|default:"-" }}</td>
+                        <td>{{ enrollment.date_registered|date:"M d, Y" }}</td>
+                        <td>
+                            {% if enrollment.status == 'PENDING' and user.is_admin_user %}
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'enrollment:enrollment_approve' enrollment.id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-check"></i>
+                                </a>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox fs-4"></i>
+                            <p class="mt-2">No enrollments found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if enrollments.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if enrollments.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ enrollments.previous_page_number }}">Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        
+        {% for num in enrollments.paginator.page_range %}
+        {% if enrollments.number == num %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > enrollments.number|add:'-3' and num < enrollments.number|add:'3' %}
+        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if enrollments.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ enrollments.next_page_number }}">Next</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

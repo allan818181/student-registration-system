@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Semesters - Student Registration System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-calendar3"></i> Academic Semesters</h1>
+    {% if user.is_admin_user %}
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'academics:semester_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Semester
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Semester List -->
+<div class="row">
+    {% for semester in semesters %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="badge bg-primary">{{ semester.year }}</span>
+                <span class="badge bg-{% if semester.is_active %}success{% else %}secondary{% endif %}">
+                    {% if semester.is_active %}<i class="bi bi-check-circle"></i> Active{% else %}Inactive{% endif %}
+                </span>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Semester {{ semester.term }}</h5>
+                
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <small class="text-muted">
